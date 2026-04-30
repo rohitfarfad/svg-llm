@@ -1,0 +1,15 @@
+{
+  "total_records": 1000,
+  "train_records": 980,
+  "val_records": 10,
+  "test_records": 10,
+  "filter_stats": {
+    "ok": 1000
+  },
+  "datasets": [
+    "starvector/svg-icons-simple"
+  ],
+  "min_chars": 50,
+  "round_numbers": false,
+  "seed": 42
+}
