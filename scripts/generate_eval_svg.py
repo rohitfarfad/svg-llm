@@ -1,5 +1,3 @@
-%%writefile /content/svg-llm/scripts/generate_eval_svg.py
-
 import argparse
 import json
 import math
