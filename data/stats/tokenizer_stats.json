@@ -1,0 +1,49 @@
+{
+  "tokenizer_path": "tokenizer/svg_bpe_4096.json",
+  "vocab_size": 4096,
+  "special_tokens": [
+    "[PAD]",
+    "[BOS]",
+    "[EOS]",
+    "[UNK]"
+  ],
+  "max_tokens": 2048,
+  "splits": {
+    "train": {
+      "input_file": "data/cleaned/train.jsonl",
+      "output_file": "data/tokens/train.bin",
+      "kept_svg_count": 214615,
+      "skipped_too_long": 24971,
+      "total_tokens_with_eos": 177418221,
+      "min_svg_tokens": 97,
+      "max_svg_tokens": 2048,
+      "mean_svg_tokens": 825.6813643035202,
+      "median_svg_tokens": 756.0,
+      "max_tokens_filter": 2048
+    },
+    "val": {
+      "input_file": "data/cleaned/val.jsonl",
+      "output_file": "data/tokens/val.bin",
+      "kept_svg_count": 2214,
+      "skipped_too_long": 230,
+      "total_tokens_with_eos": 1834317,
+      "min_svg_tokens": 111,
+      "max_svg_tokens": 2045,
+      "mean_svg_tokens": 827.5081300813008,
+      "median_svg_tokens": 750.0,
+      "max_tokens_filter": 2048
+    },
+    "test": {
+      "input_file": "data/cleaned/test.jsonl",
+      "output_file": "data/tokens/test.bin",
+      "kept_svg_count": 2212,
+      "skipped_too_long": 234,
+      "total_tokens_with_eos": 1789826,
+      "min_svg_tokens": 118,
+      "max_svg_tokens": 2048,
+      "mean_svg_tokens": 808.1437613019891,
+      "median_svg_tokens": 736.0,
+      "max_tokens_filter": 2048
+    }
+  }
+}

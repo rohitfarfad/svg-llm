@@ -1,0 +1,38 @@
+# virtual environment
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# local environment files
+.env
+.env.*
+
+# data files
+data/cleaned/
+data/tokens/
+data/raw/
+
+# large binary/model outputs
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# experiment outputs
+runs/
+checkpoints/
+logs/
+
+# OS/editor files
+.DS_Store
+.vscode/

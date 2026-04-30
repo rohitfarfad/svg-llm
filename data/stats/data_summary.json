@@ -1,13 +1,15 @@
 {
-  "total_records": 1000,
-  "train_records": 980,
-  "val_records": 10,
-  "test_records": 10,
+  "total_records": 244476,
+  "train_records": 239586,
+  "val_records": 2444,
+  "test_records": 2446,
   "filter_stats": {
-    "ok": 1000
+    "ok": 244476
   },
   "datasets": [
-    "starvector/svg-icons-simple"
+    "starvector/svg-icons-simple",
+    "starvector/svg-emoji-simple",
+    "starvector/svg-fonts-simple"
   ],
   "min_chars": 50,
   "round_numbers": false,
