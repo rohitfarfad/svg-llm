@@ -9,7 +9,7 @@ import numpy as np
 import torch
 
 from model import GPT, GPTConfig
-
+from tqdm.auto import tqdm
 
 def get_lr(step, max_lr, min_lr, warmup_steps, max_steps):
     if step < warmup_steps:
@@ -143,7 +143,14 @@ def main():
 
     log_rows = []
 
-    for step in range(args.max_iters):
+    pbar = tqdm(
+    range(args.max_iters),
+    total=args.max_iters,
+    dynamic_ncols=True,
+    desc="Training",
+)
+
+    for step in pbar:
         lr = get_lr(
             step=step,
             max_lr=args.lr,
@@ -168,6 +175,14 @@ def main():
         optimizer.step()
 
         if step % args.log_interval == 0:
+            pbar.set_postfix({
+                "loss": f"{loss.item():.4f}",
+                "lr": f"{lr:.2e}",
+                "iter": f"{step}/{args.max_iters}",
+                "left": args.max_iters - step - 1,
+            })
+
+        if step % args.log_interval == 0:
             now = time.time()
             dt = now - last_time
             last_time = now
@@ -190,6 +205,14 @@ def main():
 
         if step % args.eval_interval == 0 or step == args.max_iters - 1:
             losses = estimate_loss(model, train_data, val_data, args, device)
+
+            pbar.set_postfix({
+                "train": f"{losses['train']:.4f}",
+                "val": f"{losses['val']:.4f}",
+                "best": f"{best_val_loss:.4f}",
+                "iter": f"{step}/{args.max_iters}",
+                "left": args.max_iters - step - 1,
+            })
 
             print(
                 f"eval iter {step:5d} | "
