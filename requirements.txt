@@ -4,3 +4,6 @@ tokenizers
 numpy
 tqdm
 torch
+cairosvg 
+pillow
+tqdm
