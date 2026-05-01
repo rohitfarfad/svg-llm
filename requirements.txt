@@ -7,3 +7,5 @@ torch
 cairosvg 
 pillow
 tqdm
+mup
+model_mup
