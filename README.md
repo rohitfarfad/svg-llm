@@ -31,124 +31,99 @@ This project implements:
 svg-llm/
 ├── model.py                         # Standard decoder-only Transformer model
 ├── train.py                         # Standard training script
-├── model_mup.py                     # µP-compatible Transformer model
 ├── train_mup.py                     # µP training script
 ├── requirements.txt                 # Python dependencies
 ├── tokenizer/
 │   └── svg_bpe_4096.json            # Trained SVG BPE tokenizer
 ├── scripts/
-│   ├── 01_download_and_inspect.py   # Download and inspect raw SVG datasets
-│   ├── 02_clean_svg.py              # Clean and validate SVG records
-│   ├── 03_split_data.py             # Create train/val/test splits
+│   ├── prepare_svg_data.py          # Download, clean, validate, and split SVG data
 │   ├── train_svg_tokenizer.py       # Train BPE tokenizer and create token .bin files
 │   ├── build_generation_dataset.py  # Build <=1024-token render-valid dataset
-│   ├── generate_eval_svg.py         # Initial generation/evaluation script
-│   ├── generate_eval_svg_v2.py      # Generation using real SVG prefixes
-│   └── large_generation_sweep.py    # Large generation sweep and rendered sample grid
+│   └── generate_eval_svg.py         # SVG generation and evaluation script
 ├── data/
 │   └── stats/
 │       ├── data_summary.json
 │       └── tokenizer_stats.json
-└── reports/
-    └── figures/                     # Saved plots and rendered sample grids
+└── [final]svg_llm.ipynb             # Main Colab notebook with execution history
 ```
 
 Large files such as cleaned JSONL data, token `.bin` files, checkpoints, and generated outputs are not committed to GitHub. They should be stored locally or on Google Drive.
 
 ---
 
-## Setup
-
-Create and activate a Python environment:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-For Colab, install requirements after cloning:
-
-```bash
-git clone https://github.com/rohitfarfad/svg-llm.git
-cd svg-llm
-pip install -r requirements.txt
-```
-
----
-
-## Data
-
-The project uses SVG datasets from HuggingFace:
-
-- `starvector/svg-icons-simple`
-- `starvector/svg-emoji-simple`
-- `starvector/svg-fonts-simple`
-
-The cleaned dataset summary was:
-
-```text
-Total cleaned SVG records: 244,476
-Train records: 239,586
-Validation records: 2,444
-Test records: 2,446
-Minimum character length: 50
-XML-valid records: 244,476
-```
-
-After tokenization and filtering to SVGs with at most 2048 tokens, the main scaling dataset contained:
-
-```text
-Train tokens: 177,418,221
-Validation tokens: 1,834,317
-Test tokens: 1,789,826
-```
-
-A separate generation-focused dataset was also built by filtering to SVGs with at most 1024 tokens and requiring successful CairoSVG rendering:
-
-```text
-Train tokens: 98,155,882
-Validation tokens: 1,000,067
-Test tokens: 1,000,158
-```
-
----
-
 ## Data Pipeline
 
-### 1. Download and inspect datasets
+The data pipeline is handled by one script:
 
-```bash
-python scripts/01_download_and_inspect.py \
-  --datasets starvector/svg-icons-simple starvector/svg-emoji-simple starvector/svg-fonts-simple \
-  --out_dir data/raw
+```text
+scripts/prepare_svg_data.py
 ```
 
-### 2. Clean SVGs
+This script downloads SVG datasets from HuggingFace, finds the SVG column, cleans the SVG strings, validates XML structure, filters short examples, and creates train/validation/test JSONL files.
 
-```bash
-python scripts/02_clean_svg.py \
-  --input_dir data/raw \
-  --output_file data/cleaned/all.jsonl \
-  --min_chars 50
+It creates:
+
+```text
+data/cleaned/train.jsonl
+data/cleaned/val.jsonl
+data/cleaned/test.jsonl
+data/stats/data_summary.json
 ```
 
-### 3. Split data
+### Prepare SVG data
 
 ```bash
-python scripts/03_split_data.py \
-  --input_file data/cleaned/all.jsonl \
-  --output_dir data/cleaned \
-  --train_ratio 0.98 \
-  --val_ratio 0.01 \
-  --test_ratio 0.01 \
+python scripts/prepare_svg_data.py \
+  --datasets \
+    starvector/svg-icons-simple \
+    starvector/svg-emoji-simple \
+    starvector/svg-fonts-simple \
+  --out_dir data \
+  --min_chars 50 \
+  --train_frac 0.98 \
+  --val_frac 0.01 \
   --seed 42
 ```
+
+You can also pass HuggingFace dataset URLs directly:
+
+```bash
+python scripts/prepare_svg_data.py \
+  --datasets \
+    https://huggingface.co/datasets/starvector/svg-icons-simple \
+    https://huggingface.co/datasets/starvector/svg-emoji-simple \
+    https://huggingface.co/datasets/starvector/svg-fonts-simple \
+  --out_dir data \
+  --min_chars 50 \
+  --train_frac 0.98 \
+  --val_frac 0.01 \
+  --seed 42
+```
+
+Optional quick-debug run:
+
+```bash
+python scripts/prepare_svg_data.py \
+  --datasets starvector/svg-icons-simple \
+  --out_dir data_debug \
+  --min_chars 50 \
+  --limit_per_dataset 1000
+```
+
+Optional numeric rounding:
+
+```bash
+python scripts/prepare_svg_data.py \
+  --datasets starvector/svg-icons-simple starvector/svg-emoji-simple starvector/svg-fonts-simple \
+  --out_dir data \
+  --min_chars 50 \
+  --train_frac 0.98 \
+  --val_frac 0.01 \
+  --seed 42 \
+  --round_numbers
+```
+
+For the final project run, numeric rounding was not used.
 
 ---
 
@@ -165,26 +140,94 @@ Special tokens: [PAD], [BOS], [EOS], [UNK]
 Tokenizer path: tokenizer/svg_bpe_4096.json
 ```
 
-Train tokenizer and create binary token streams:
+Train the tokenizer and create binary token streams:
 
 ```bash
 python scripts/train_svg_tokenizer.py \
-  --train_jsonl data/cleaned/train.jsonl \
-  --val_jsonl data/cleaned/val.jsonl \
-  --test_jsonl data/cleaned/test.jsonl \
-  --tokenizer_out tokenizer/svg_bpe_4096.json \
-  --output_dir data/tokens \
+  --data_dir data \
+  --tokenizer_dir tokenizer \
+  --out_dir data/tokens \
   --vocab_size 4096 \
   --max_tokens 2048
+```
+
+This reads:
+
+```text
+data/cleaned/train.jsonl
+data/cleaned/val.jsonl
+data/cleaned/test.jsonl
+```
+
+and creates:
+
+```text
+tokenizer/svg_bpe_4096.json
+data/tokens/train.bin
+data/tokens/val.bin
+data/tokens/test.bin
+data/stats/tokenizer_stats.json
+```
+
+To disable token-length filtering, use:
+
+```bash
+python scripts/train_svg_tokenizer.py \
+  --data_dir data \
+  --tokenizer_dir tokenizer \
+  --out_dir data/tokens \
+  --vocab_size 4096 \
+  --max_tokens 0
+```
+
+---
+
+## Generation-Focused Dataset
+
+To improve generation validity, a filtered dataset was created with:
+
+- SVG token length <= 1024
+- XML-valid SVGs
+- CairoSVG-renderable SVGs
+- Same 4096-token BPE tokenizer
+
+Build the generation-focused dataset:
+
+```bash
+python scripts/build_generation_dataset.py \
+  --input_data_dir data \
+  --output_data_dir generation_dataset_1024 \
+  --tokenizer tokenizer/svg_bpe_4096.json \
+  --max_tokens 1024 \
+  --target_train_tokens 105000000 \
+  --target_val_tokens 1000000 \
+  --target_test_tokens 1000000
 ```
 
 This creates:
 
 ```text
-data/tokens/train.bin
-data/tokens/val.bin
-data/tokens/test.bin
-data/stats/tokenizer_stats.json
+generation_dataset_1024/cleaned/train.jsonl
+generation_dataset_1024/cleaned/val.jsonl
+generation_dataset_1024/cleaned/test.jsonl
+generation_dataset_1024/tokens/train.bin
+generation_dataset_1024/tokens/val.bin
+generation_dataset_1024/tokens/test.bin
+generation_dataset_1024/stats/generation_dataset_summary.json
+```
+
+For a faster version without CairoSVG render checking:
+
+```bash
+python scripts/build_generation_dataset.py \
+  --input_data_dir data \
+  --output_data_dir generation_dataset_1024_fast \
+  --tokenizer tokenizer/svg_bpe_4096.json \
+  --max_tokens 1024 \
+  --target_train_tokens 105000000 \
+  --target_val_tokens 1000000 \
+  --target_test_tokens 1000000 \
+  --no_render_check
 ```
 
 ---
