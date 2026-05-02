@@ -5,7 +5,7 @@ This repository contains code for training decoder-only Transformer language mod
 The task is framed as next-token prediction over tokenized SVG/XML code. Generated outputs are evaluated both as text and as rendered images using XML validity and CairoSVG render success.
 
 ---
-##<span style="color:red"> !! Please check the python notebook in the repository for detailed history of training and execution</span>
+## $\color{red}{\text{!! Please check the Python notebook in the repository for the detailed history of execution.}}$ 
 
 
 ## Project Summary
