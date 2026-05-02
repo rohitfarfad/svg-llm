@@ -6,6 +6,8 @@ The task is framed as next-token prediction over tokenized SVG/XML code. Generat
 
 ---
 
+## !! Please check the python notebook in the repository for detailed history of training and execution
+
 ## Project Summary
 
 This project implements:
