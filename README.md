@@ -59,7 +59,7 @@ The data pipeline is handled by one script:
 scripts/prepare_svg_data.py
 ```
 
-This script downloads SVG datasets from HuggingFace, finds the SVG column, cleans the SVG strings, validates XML structure, filters short examples, and creates train/validation/test JSONL files.
+This script downloads SVG datasets from HuggingFace, detects the SVG column, cleans SVG strings, validates XML structure, filters short examples, and creates train/validation/test JSONL files.
 
 It creates:
 
@@ -110,20 +110,11 @@ python scripts/prepare_svg_data.py \
   --limit_per_dataset 1000
 ```
 
-Optional numeric rounding:
+For the final project run, numeric rounding was not used. To enable optional decimal rounding, add:
 
 ```bash
-python scripts/prepare_svg_data.py \
-  --datasets starvector/svg-icons-simple starvector/svg-emoji-simple starvector/svg-fonts-simple \
-  --out_dir data \
-  --min_chars 50 \
-  --train_frac 0.98 \
-  --val_frac 0.01 \
-  --seed 42 \
-  --round_numbers
+--round_numbers
 ```
-
-For the final project run, numeric rounding was not used.
 
 ---
 
@@ -180,8 +171,6 @@ python scripts/train_svg_tokenizer.py \
   --max_tokens 0
 ```
 
----
-
 ## Generation-Focused Dataset
 
 To improve generation validity, a filtered dataset was created with:
@@ -230,7 +219,65 @@ python scripts/build_generation_dataset.py \
   --no_render_check
 ```
 
----
+## SVG Generation and Evaluation
+
+The repository currently includes:
+
+```text
+scripts/generate_eval_svg.py
+```
+
+This script evaluates test loss/perplexity, generates SVG samples, checks XML validity, attempts CairoSVG rendering, and saves generated SVG/PNG outputs.
+
+Run generation/evaluation:
+
+```bash
+PYTHONPATH=. python scripts/generate_eval_svg.py \
+  --ckpt checkpoints/generation_1024/medium_plus/best.pt \
+  --tokenizer tokenizer/svg_bpe_4096.json \
+  --test_bin generation_dataset_1024/tokens/test.bin \
+  --out_dir generation/medium_plus_generation_eval \
+  --device cuda \
+  --max_new_tokens 1024 \
+  --top_k 50 \
+  --top_p 0.95 \
+  --eval_batch_size 8
+```
+
+This creates:
+
+```text
+generation/medium_plus_generation_eval/
+├── svg/
+├── png/
+├── generated_grid.png
+├── generation_metrics.csv
+├── generation_metrics.json
+└── generation_summary.json
+```
+
+The final large generation sweep reported in the project was run in the notebook:
+
+```text
+[final]svg_llm.ipynb
+```
+
+Final large generation sweep results:
+
+```text
+Total generated samples: 300
+Unconditional samples: 200
+Real-prefix samples: 100
+Valid XML samples: 53
+Renderable samples: 53
+Overall XML validity rate: 17.67%
+Overall render rate: 17.67%
+Real-prefix render rate: 43.0%
+Best unconditional setting: temperature 0.3, top-k 10, render rate 10.0%
+```
+
+If you want the large sweep to be runnable directly from the repository, add `scripts/large_generation_sweep.py` to the repo and update this section accordingly.
+
 
 ## Standard Transformer Training
 
